@@ -1,4 +1,4 @@
-# Section 2: Agentic Software Development with GitHub Copilot
+﻿# Section 2: Agentic Software Development with GitHub Copilot
 
 Build an automation: teach Copilot a job with a skill, connect it to current
 documentation, and review the resulting pull request for security issues.
@@ -13,16 +13,16 @@ response to a repository event. In this tutorial, start with a **Manual** trigge
 The link opens a repository session and requests the `universe-welcome` canvas.
 The repository must be trusted and its extension loaded.
 
-Already in a session? Stay there and open **+ → Installed extensions →
+Already in a session? Stay there and open **+ â†’ Installed extensions â†’
 Universe '26 welcome**, or ask Copilot to open the Universe welcome canvas.
 Use the canvas's **Start** buttons to follow the guides.
 
 ## The four steps
 
 Prefer to read the guides here? Each step has a full page:
-[Skills](skills/README.md) ·
-[Tools and connectors](tools-and-connectors/README.md) ·
-[Security review](security-review/README.md) ·
+[Skills](skills/README.md) Â·
+[Tools and connectors](tools-and-connectors/README.md) Â·
+[Security review](security-review/README.md) Â·
 [Automate](automate/README.md)
 
 1. **Skills:** Open the existing
@@ -41,7 +41,7 @@ Prefer to read the guides here? Each step has a full page:
 3. **Security review:** Run `/security-review` on the last PR created by the
    skill in this chat. Review the findings, add the review step to `SKILL.md`,
    and try it on another issue.
-4. **Automate:** Open **Automations → New Automation**, name the automation,
+4. **Automate:** Open **Automations â†’ New Automation**, name the automation,
    and choose **Manual** as its trigger. Select **your fork of
    virtual-universe-26** as the project, enter `/issue-to-pr`, and add the
    guide's short prompt. Click **Create**, then use the play button when ready.
@@ -75,3 +75,4 @@ show changes. Its canvas ID remains `universe-welcome`.
 Want to get hands-on with the GitHub Copilot app? Check out [this course](https://gh.io/copilotapp-firststeps).
 
 [Back to the cookbooks](../README.md)
+

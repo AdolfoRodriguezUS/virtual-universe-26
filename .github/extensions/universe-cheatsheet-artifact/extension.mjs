@@ -1,34 +1,14 @@
-// Section 3 final exercise: "Attach a cheat sheet artifact".
-//
-// The canvas does the setup itself so the learner never waits on a chat turn.
-// Opening it runs the GitHub CLI here in the extension to find or create the
-// learner's fork, turn issues on, and open the cheat sheet issue. It records
-// the issue in a state file that the /cheatsheet-artifact skill reads, so the
-// learner runs that skill in this same session.
-import { execFile } from "node:child_process";
-import { createServer } from "node:http";
-import { readFile, writeFile, mkdir } from "node:fs/promises";
-import { homedir } from "node:os";
-import { join } from "node:path";
-import { fileURLToPath } from "node:url";
-import { joinSession, createCanvas } from "@github/copilot-sdk/extension";
-
-const UPSTREAM = "octodemo/virtual-universe-26";
+﻿const UPSTREAM = "octodemo/virtual-universe-26";
 const TITLE = "My GitHub Universe '26 cheat sheet";
 const BODY = `Run \`/cheatsheet-artifact\` in the session where you opened the guide.
 
 Copilot attaches your Universe '26 cheat sheet and its working notes here as
 **Artifacts**. It also opens the **Badge Simulator**, which records your
-Universe badge and adds the GIF as a third artifact. \u2728
+Universe badge and adds the GIF as a third artifact. ✨
 
 Didn't make it to GitHub Virtual Universe '26? Work through the whole workshop
 at [${UPSTREAM}](https://github.com/${UPSTREAM}).`;
 const astronautImg = (url) => `<img src="${url}" alt="Copilot astronaut" width="120" align="right">`;
-// Issue artifacts have a REST API, so nothing here needs a session linked to the
-// issue: the /cheatsheet-artifact skill reads this state file and posts to
-// repos/<fork>/issues/<n>/artifacts. That keeps the whole exercise in the one
-// session the learner already approved - no deep link, no second session, and
-// the guide stays in front the whole time.
 const CANVAS_ID = "universe-cheatsheet-artifact";
 const STATE = join(process.env.COPILOT_HOME || join(homedir(), ".copilot"), "cache", "universe-cheatsheet-artifact", "issue.json");
 
@@ -45,7 +25,7 @@ async function writeState(state) {
         await mkdir(join(STATE, ".."), { recursive: true });
         await writeFile(STATE, JSON.stringify(state));
     } catch {
-        // A guide that can't remember the issue just shows step 1 again.
+        // ignore state write failures
     }
 }
 
@@ -67,24 +47,19 @@ function gh(args, timeout = 20000) {
 async function findFork(login) {
     const forks = await gh(["api", `repos/${UPSTREAM}/forks?per_page=100`, "--paginate", "-q", `.[] | select(.owner.login == "${login}") | .full_name`]);
     if (forks) return forks.split("\n")[0];
-    // Covers a fork that was renamed away from the upstream name.
     return (await gh(["api", `repos/${login}/virtual-universe-26`, "-q", "select(.fork) | .full_name"])) || null;
 }
 
-// Reuses an open issue with the same title so repeat clicks don't pile up issues.
 async function findIssue(fork) {
     const list = await gh(["issue", "list", "-R", fork, "--state", "open", "--limit", "30", "--json", "number,title"]);
     if (!list) return null;
     try {
-        return JSON.parse(list).find((i) => i.title === TITLE)?.number ?? null;
+        return JSON.parse(list).find((item) => item.title === TITLE)?.number ?? null;
     } catch {
         return null;
     }
 }
 
-// Uploads the astronaut with the issue so the image is hosted by GitHub rather
-// than linked from a branch, then rewrites the body to place it beside the text.
-// Falls back to a plain text body rather than leaving a broken image behind.
 async function createIssue(fork) {
     const astronaut = fileURLToPath(new URL(`${tutorial}astronaut.png`, import.meta.url));
     const create = ["issue", "create", "-R", fork, "--title", TITLE, "--body", BODY];
@@ -96,7 +71,7 @@ async function createIssue(fork) {
 
     if (attached) {
         const body = await gh(["issue", "view", String(number), "-R", fork, "--json", "body", "-q", ".body"]);
-        const hosted = body?.match(/https:\/\/github\.com\/user-attachments\/assets\/[\w-]+/)?.[0];
+        const hosted = body?.match(/https:\/\/github\.com\/user-attachments\/assets\/[-\w]+/)?.[0];
         if (hosted) await gh(["api", "-X", "PATCH", `repos/${fork}/issues/${number}`, "-f", `body=${astronautImg(hosted)}\n\n${BODY}`]);
     }
     return number;
@@ -112,7 +87,7 @@ function start() {
         if (!fork) {
             await gh(["repo", "fork", UPSTREAM, "--clone=false", "--default-branch-only"], 60000);
             for (let i = 0; i < 15 && !fork; i++) {
-                await new Promise((r) => setTimeout(r, 2000));
+                await new Promise((resolve) => setTimeout(resolve, 2000));
                 fork = await findFork(login);
             }
             if (!fork) return { error: "GitHub didn't create your fork. Fork octodemo/virtual-universe-26 on GitHub, then try again." };
@@ -174,8 +149,6 @@ session = await joinSession({
                     entry = await startServer();
                     servers.set(ctx.instanceId, entry);
                 }
-                // A session that already made the issue reopens straight on it,
-                // so the learner never repeats setup.
                 const state = await readState();
                 const q = state ? `?issue=${encodeURIComponent(`${state.fork}#${state.number}`)}&url=${encodeURIComponent(state.issueUrl)}` : "";
                 return { title: "Attach a cheat sheet artifact", url: `${entry.url}${q}` };
